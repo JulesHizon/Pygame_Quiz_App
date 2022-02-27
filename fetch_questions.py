@@ -13,13 +13,14 @@ class QuestionBank():
 
         self.params = {
             'amount' : 10,
-            'category' : self.categories['animals'],
+            'category' : self.categories['history'],
             'difficulty' : 'easy',
             'type' : 'boolean',
         }
 
-    def set_params(self,):
-        pass
+    def set_params(self, category='animals', difficulty='easy'):
+        self.params['category'] = self.categories[category]
+        self.params['difficulty'] = difficulty
     
     def get_questions(self,):
         self.request = requests.get("https://opentdb.com/api.php?", params=self.params)
