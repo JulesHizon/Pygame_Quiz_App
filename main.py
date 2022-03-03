@@ -124,52 +124,11 @@ qb = QuestionBank()
 ql = QuestionLogic(qb)
 quiz = QuizGame(ql)
 
-#Pre Game Options Loop
-run_options = True
-run_game = False
-while run_options:
-
-    fps_clock.tick(FPS)
-    screen.fill(SCREEN_COLOUR)
-    draw_setting_instructions()
-    draw_settings_buttons()
-    draw_category_selection()
-    difficulty_button_selected()
-
-    #Display Refresh
-    pygame.display.update()
-
-    #Event Handling
-    for event in pygame.event.get():
-        pos = pygame.mouse.get_pos()
-        
-        #Quit Event
-        if event.type == pygame.QUIT:
-            run_options = False
-            pygame.quit()
-
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            for btn in category_btns:
-                if btn.is_over(pos):
-                    quiz.ql.qb.set_category(btn.text.lower())
-                    for key in setting_btn_active.keys():
-                        setting_btn_active[key] = False
-                    setting_btn_active[btn] = True
-
-            for btn in difficulty_btns:
-                if btn.is_over(pos):
-                    quiz.ql.qb.set_difficulty(btn.text.lower())
-                    for key in diff_btn_active.keys():
-                        diff_btn_active[key] = False
-                    diff_btn_active[btn] = True
-
-            if btn_play.is_over(pos):
-                quiz.ql.qb.get_questions()
-                if len(quiz.ql.qb.question_bank) == 0:
-                    invalid_selection = True
-                else:
-                    run_options = False
-                    run_game = True
+game_state = {
+    'settings' : True,
+    'quiz' : False,
+    'endgame' : False
+}
 
 #Main Game Buttons
 
@@ -214,18 +173,121 @@ def draw_incorrect():
         time.sleep(0.1)
         incorrect_trigger = False
 
-#Main Game Loop
-while run_game:
+#End Game Buttons
+btn_play_yes = Button(colour=MEDIUM_COLOUR, x=165, y=375, width=BTN_WIDTH, height=BTN_HEIGHT, text='YES')
+btn_play_no = Button(colour=MEDIUM_COLOUR, x=485, y=375, width=BTN_WIDTH, height=BTN_HEIGHT, text='NO')
 
-    while quiz.prompt_num < len(quiz.ql.qb.question_bank):
+#End Game Draw Functions
+def draw_final_score():
+    final_score_font = pygame.font.SysFont('calibri', 40)
+    final_score_text = final_score_font.render(f"Thanks for playing. Your final score is {quiz.score}/10!", 1, (0,0,0))
+    text_rect = final_score_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
+    screen.blit(final_score_text, text_rect)
+
+def draw_end_buttons():
+    btn_play_yes.draw(screen, outline=(0,0,0), text_size=TEXT_SIZE_2)
+    btn_play_no.draw(screen, outline=(0,0,0), text_size=TEXT_SIZE_2)
+
+run = True
+while run:
+    #Pre Game Options Loop
+
+    while game_state['settings']:
 
         fps_clock.tick(FPS)
         screen.fill(SCREEN_COLOUR)
-        draw_main_buttons()
-        draw_prompt(quiz.prompt_num)
-        draw_score(quiz.score)
-        draw_correct()
-        draw_incorrect()
+        draw_setting_instructions()
+        draw_settings_buttons()
+        draw_category_selection()
+        difficulty_button_selected()
+
+        #Display Refresh
+        pygame.display.update()
+
+        #Event Handling
+        for event in pygame.event.get():
+            pos = pygame.mouse.get_pos()
+            
+            #Quit Event
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+                
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for btn in category_btns:
+                    if btn.is_over(pos):
+                        quiz.ql.qb.set_category(btn.text.lower())
+                        for key in setting_btn_active.keys():
+                            setting_btn_active[key] = False
+                        setting_btn_active[btn] = True
+
+                for btn in difficulty_btns:
+                    if btn.is_over(pos):
+                        quiz.ql.qb.set_difficulty(btn.text.lower())
+                        for key in diff_btn_active.keys():
+                            diff_btn_active[key] = False
+                        diff_btn_active[btn] = True
+
+                if btn_play.is_over(pos):
+                    quiz.ql.qb.get_questions()
+                    if len(quiz.ql.qb.question_bank) == 0:
+                        invalid_selection = True
+                    else:
+                        game_state['settings'] = False
+                        game_state['quiz'] = True
+
+    #Main Game Loop
+    while game_state['quiz']:
+
+        while quiz.prompt_num < len(quiz.ql.qb.question_bank):
+
+            fps_clock.tick(FPS)
+            screen.fill(SCREEN_COLOUR)
+            draw_main_buttons()
+            draw_prompt(quiz.prompt_num)
+            draw_score(quiz.score)
+            draw_correct()
+            draw_incorrect()
+
+            #Display Refresh
+            pygame.display.update()
+
+            #Event Handling
+            for event in pygame.event.get():
+                pos = pygame.mouse.get_pos()
+                #Quit Event
+                if event.type == pygame.QUIT:
+                    run = False
+                    pygame.quit()
+                    
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+
+                    if btn_true.is_over(pos):
+                        if quiz.ql.qb.question_bank[quiz.prompt_num]['correct_answer'] == 'True':
+                            quiz.score += 1
+                            correct_trigger = True
+                        else:
+                            incorrect_trigger = True
+                        quiz.prompt_num += 1
+
+                    if btn_false.is_over(pos):
+                        if quiz.ql.qb.question_bank[quiz.prompt_num]['correct_answer'] == 'False':
+                            quiz.score += 1
+                            correct_trigger = True
+                        else:
+                            incorrect_trigger = True
+                        quiz.prompt_num += 1
+
+        game_state['quiz'] = False
+        game_state['endgame'] = True
+
+    while game_state['endgame']:
+
+        fps_clock.tick(FPS)
+        screen.fill(SCREEN_COLOUR)
+        draw_final_score()
+        draw_end_buttons()
 
         #Display Refresh
         pygame.display.update()
@@ -235,49 +297,19 @@ while run_game:
             pos = pygame.mouse.get_pos()
             #Quit Event
             if event.type == pygame.QUIT:
-                run_game = False
+                game_state['endgame'] = False
+                run = False
                 pygame.quit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
+                
+                if btn_play_yes.is_over(pos):
+                    game_state['endgame'] = False
+                    game_state['settings'] = True
+                    quiz.score = 0
+                    quiz.prompt_num = 0
 
-                if btn_true.is_over(pos):
-                    if quiz.ql.qb.question_bank[quiz.prompt_num]['correct_answer'] == 'True':
-                        quiz.score += 1
-                        correct_trigger = True
-                    else:
-                        incorrect_trigger = True
-                    quiz.prompt_num += 1
-
-                if btn_false.is_over(pos):
-                    if quiz.ql.qb.question_bank[quiz.prompt_num]['correct_answer'] == 'False':
-                        quiz.score += 1
-                        correct_trigger = True
-                    else:
-                        incorrect_trigger = True
-                    quiz.prompt_num += 1    
-
-    run_game = False
-    end_game = True
-
-def draw_final_score():
-    final_score_font = pygame.font.SysFont('calibri', 40)
-    final_score_text = final_score_font.render(f"Thanks for playing. Your final score is {quiz.score}/10!", 1, (0,0,0))
-    text_rect = final_score_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
-    screen.blit(final_score_text, text_rect)
-
-while end_game:
-
-    fps_clock.tick(FPS)
-    screen.fill(SCREEN_COLOUR)
-    draw_final_score()
-
-    #Display Refresh
-    pygame.display.update()
-
-    #Event Handling
-    for event in pygame.event.get():
-        pos = pygame.mouse.get_pos()
-        #Quit Event
-        if event.type == pygame.QUIT:
-            run_game = False
-            pygame.quit()
+                if btn_play_no.is_over(pos):
+                    game_state['endgame'] = False
+                    run = False
+                    pygame.quit()
