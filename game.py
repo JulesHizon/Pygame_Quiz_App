@@ -13,6 +13,7 @@ class QuizGame():
 
     def play_game(self):
         ql.qb.get_questions()
+        # uncomment the following to play the non-GUI, CLI version of the game.
         # self.valid_questions()
 
         # while ql.current_question < len(ql.qb.question_bank):
